@@ -15,11 +15,10 @@ public class BoardManager : MonoBehaviour
 
     [SerializeField] private List<Sprite> prefabs = new List<Sprite>();
 
+    [SerializeField] AudioClip candyAppearingSound;
+
     // Definir una matriz
     private GameObject[,] candies;
-
-    // Saber cual candy fue seleccionado
-    private CandyController selectedCandy;
 
     // saber cuantas coincidencias necesitamos para hacer un match, 2 mas el actual
     public const int MinCandiesToMatch = 2;
@@ -27,15 +26,45 @@ public class BoardManager : MonoBehaviour
     // Saber cuales son los candies posibles y sus ids
     private Dictionary<int, Sprite> bookOfCandies = new();
 
+    // Lista con los pesos que va a tener cada sprite
+    private List<int> weights = new();
+
+    // Lista de la serie acumulativa
+    private List<int> serie = new();
+
+    // Saber si estamos en challenge
+    private bool isChallenge;
+
+    // Saber que sprite estamos buscando
+    private int lookingForID;
+
+    public bool IsChallenge { get => isChallenge; }
+    public int LookingForID { get => lookingForID; }
+
+    public int combo = 0;
+
     private void Start()
     {
         if (!sharedInstance) sharedInstance = this;
         else Destroy(gameObject);
 
         Vector2 offset = currentCandy.GetComponent<BoxCollider2D>().size;
+
+        isChallenge = PlayerPrefs.GetInt("challenge", 0) == 1 ? true : false;
+
+        if (isChallenge)
+        {
+            SetWeightForSprite();
+            CalculateSerie();
+        }
+
         CreateInitialBoard(offset + new Vector2(0.1f, 0.5f));
+
+        if (isChallenge) GUIManager.sharedInstance.SetChallengeIcon(bookOfCandies[lookingForID]);
+
     }
 
+    // MARK: - Funtions
     private void CreateInitialBoard(Vector2 offset)
     {
         candies = new GameObject[xSize, ySize];
@@ -80,16 +109,26 @@ public class BoardManager : MonoBehaviour
     private int GetIndexForSprite(GameObject[,] candies, int x, int y)
     {
         int index;
+        int count = 0;
 
         do
         {
-            index = Random.Range(0, prefabs.Count);
+            // TODO: Si es un juego normal sacamos el random de 0 a lista de prefabs
+            // Si no es normal hacemos las series accumulativas
+            if (isChallenge)
+            {
+                index = GetIndexForChallenge();
+            }
+            else index = Random.Range(0, prefabs.Count);
+
+            count = count + 1;
         }
         while (
             // Si no estamos en la columna 0 y el index es igual al de la derecha
-            (x > 0 && index == candies[x - 1, y].GetComponent<CandyController>().id) ||
+            ((x > 0 && index == candies[x - 1, y].GetComponent<CandyController>().id) ||
             // para vericar con el vecino de abajo
-            (y > 0 && index == candies[x, y - 1].GetComponent<CandyController>().id)
+            (y > 0 && index == candies[x, y - 1].GetComponent<CandyController>().id)) &&
+            count < 10*10*10*10
         );
 
         return index;
@@ -116,7 +155,7 @@ public class BoardManager : MonoBehaviour
         // si no estamos en la fila de esta abajo
         if (y > 0)
         {
-            possibleKeyCandies.Remove(candies[x, y-1].GetComponent<CandyController>().id);
+            possibleKeyCandies.Remove(candies[x, y - 1].GetComponent<CandyController>().id);
         }
 
         keyCandy = possibleKeyCandies[Random.Range(0, possibleKeyCandies.Count)];
@@ -125,6 +164,64 @@ public class BoardManager : MonoBehaviour
         return newCandy;
     }
 
+    private void SetWeightForSprite()
+    {
+        int weight;
+        int min = 2;
+        int max = 3;
+
+        for (int i = 0; i < prefabs.Count; i++)
+        {
+            do
+            {
+                weight = Random.Range(1, prefabs.Count + 5);
+            }
+            while (weights.Contains(weight));
+
+            if (weight >= min && weight <= max)  lookingForID = i;
+
+            weights.Add(weight);
+        }
+
+    }
+
+    private void CalculateSerie()
+    {
+        int acc = weights[0];
+        
+        for (int i = 1; i < weights.Count; i++)
+        {
+            serie.Add(acc);
+            acc = acc + weights[i];
+        }
+
+        serie.Add(acc);
+
+    }
+
+    private int GetIndexForChallenge()
+    {
+        bool founded = false;
+        int random = Random.Range(0, serie[serie.Count - 1]);
+        int index = 0;
+        int j = 0;
+
+        while (!founded && j < serie.Count)
+        {
+
+            int left = j > 0 ? serie[j-1] : 0;
+            
+            if (random >= left && random < serie[j]) founded = true;
+            else index = index + 1;
+
+            j = j + 1;
+        }
+
+        return index;
+
+    }
+
+    // MARK: - Routines
     public IEnumerator FindNullableCandies()
     {
         // TODO: Cambiar el segundo for por un while para evitar el break;
@@ -148,6 +245,7 @@ public class BoardManager : MonoBehaviour
     IEnumerator MakeCandiesFall(int x, int ystart, float shiftDelay = 0.05f)
     {
         IsShifting = true;
+        AudioSource.PlayClipAtPoint(candyAppearingSound, transform.position);
 
         List<GameObject> renderers = new List<GameObject>();
         int nullCandies = 0;
@@ -164,6 +262,9 @@ public class BoardManager : MonoBehaviour
 
         for (int i = 0; i < nullCandies; i++)
         {
+            // Dar 10 puntos por cada caramelo nuevo que baja
+            GUIManager.sharedInstance.Score += 10;
+
             yield return new WaitForSeconds(shiftDelay);
 
             for (int j = 0; j < renderers.Count - 1; j++)

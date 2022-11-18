@@ -11,7 +11,11 @@ public class CandyController : MonoBehaviour
     private static CandyController previousSelected = null;
 
     private SpriteRenderer spriteRenderer; 
-    private bool isSelected = false; 
+    private bool isSelected = false;
+
+    private bool wasMatch = false;
+
+    private int candiesToDestroy = 0;
 
     private Vector2[] adjacentDirections = new Vector2[] {
         Vector2.up,
@@ -47,6 +51,8 @@ public class CandyController : MonoBehaviour
     {
         if (spriteRenderer.sprite == null || BoardManager.sharedInstance.IsShifting) return;
 
+        BoardManager.sharedInstance.combo = 0;
+
         // si yo como candy estoy seleccionado
         if (isSelected) DeselectCandy();
         else
@@ -66,6 +72,21 @@ public class CandyController : MonoBehaviour
 
                     // luego verificamos que el nuevo seleccioando provoca un 3 in line
                     FindAllMatches();
+
+                    // si challenge damos un movimiento extra
+                    if (
+                        BoardManager.sharedInstance.IsChallenge 
+                        && BoardManager.sharedInstance.LookingForID == id 
+                        && wasMatch
+                    )
+                    {
+                        GUIManager.sharedInstance.MoveCounter += 1;
+                    }
+                    else
+                    {
+                        // Restamos el movimiento
+                        GUIManager.sharedInstance.MoveCounter--;
+                    }
                 }
                 else
                 {
@@ -139,13 +160,14 @@ public class CandyController : MonoBehaviour
 
     private bool ClearMatch(Vector2[] directions)
     {
-
         List<GameObject> matchingCandies = new List<GameObject>();
 
         foreach (Vector2 direction in directions)
         {
             matchingCandies.AddRange(FindMatch(direction));
         }
+
+        candiesToDestroy += matchingCandies.Count;
 
         if (matchingCandies.Count >= BoardManager.MinCandiesToMatch)
         {
@@ -182,9 +204,32 @@ public class CandyController : MonoBehaviour
         {
             spriteRenderer.sprite = null;
 
+            wasMatch = true;
+
+            candiesToDestroy = candiesToDestroy + 1;
+
+            if (
+                BoardManager.sharedInstance.IsChallenge
+                && BoardManager.sharedInstance.LookingForID == id
+            )
+            {
+                GUIManager.sharedInstance.SetChallengeValue(candiesToDestroy);
+            }
+
+            BoardManager.sharedInstance.combo += 1;
+
             // llevamos los espacios vacios
+            //BoardManager.sharedInstance.StopCandiesRainRoutine();
             StopCoroutine(BoardManager.sharedInstance.FindNullableCandies());
             StartCoroutine(BoardManager.sharedInstance.FindNullableCandies());
         }
+        else
+        {
+            wasMatch = false;
+        }
+
+        candiesToDestroy = 0;
     }
+
+
 }
