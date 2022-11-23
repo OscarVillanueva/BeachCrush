@@ -14,8 +14,8 @@ public class BoardManager : MonoBehaviour
     public bool IsShifting { get; set; }
 
     [SerializeField] private List<Sprite> prefabs = new List<Sprite>();
-
     [SerializeField] AudioClip candyAppearingSound;
+    [SerializeField] AudioClip comboSound;
 
     // Definir una matriz
     private GameObject[,] candies;
@@ -38,10 +38,43 @@ public class BoardManager : MonoBehaviour
     // Saber que sprite estamos buscando
     private int lookingForID;
 
+    private int combo = 0;
+
+    private bool alreadyPlayed;
+
     public bool IsChallenge { get => isChallenge; }
     public int LookingForID { get => lookingForID; }
 
-    public int combo = 0;
+    public int Combo {
+        get => combo;
+        set {
+
+            combo = value;
+
+            if (combo == 0)
+            {
+                alreadyPlayed = false;
+
+                AudioSource[] audios = FindObjectsOfType(typeof(AudioSource)) as AudioSource[];
+
+                foreach (AudioSource audio in audios)
+                {
+                    if( !audio.CompareTag("MainCamera") )
+                    {
+                        Destroy(audio.gameObject, 0.2f);
+                    }
+                }
+
+            }
+
+            if (combo >= 2)
+            {
+                if (!alreadyPlayed) AudioSource.PlayClipAtPoint(comboSound, transform.position);
+                alreadyPlayed = true;
+            }
+
+        }
+    }
 
     private void Start()
     {

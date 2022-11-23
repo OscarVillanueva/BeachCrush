@@ -366,7 +366,7 @@ AudioSource:
   OutputAudioMixerGroup: {fileID: 0}
   m_audioClip: {fileID: 8300000, guid: dbc79cad32f770a4f82b546b70bef5aa, type: 3}
   m_PlayOnAwake: 1
-  m_Volume: 0.5
+  m_Volume: 0.2
   m_Pitch: 1
   Loop: 1
   Mute: 0
@@ -1271,6 +1271,7 @@ MonoBehaviour:
   - {fileID: 1118519304, guid: 586384ccb1302904dac492161d07e3d7, type: 3}
   - {fileID: 1336929039, guid: 586384ccb1302904dac492161d07e3d7, type: 3}
   candyAppearingSound: {fileID: 8300000, guid: 19a9ea6ede5f6774da42bf6dfb48792e, type: 3}
+  comboSound: {fileID: 8300000, guid: 2760aa4ca1742af46bb4c29aabaec4d8, type: 3}
 --- !u!4 &1957453262
 Transform:
   m_ObjectHideFlags: 0

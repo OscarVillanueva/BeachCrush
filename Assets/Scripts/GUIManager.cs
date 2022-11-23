@@ -24,7 +24,7 @@ public class GUIManager : MonoBehaviour
         get => score;
         set
         {
-            int combo = BoardManager.sharedInstance ? BoardManager.sharedInstance.combo : 1;
+            int combo = BoardManager.sharedInstance ? BoardManager.sharedInstance.Combo : 1;
             score = value + combo;
             scoreTexts.text = "Score: " + score;
         }

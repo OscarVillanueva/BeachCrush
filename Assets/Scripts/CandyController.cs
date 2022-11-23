@@ -51,7 +51,7 @@ public class CandyController : MonoBehaviour
     {
         if (spriteRenderer.sprite == null || BoardManager.sharedInstance.IsShifting) return;
 
-        BoardManager.sharedInstance.combo = 0;
+        BoardManager.sharedInstance.Combo = 0;
 
         // si yo como candy estoy seleccionado
         if (isSelected) DeselectCandy();
@@ -216,7 +216,7 @@ public class CandyController : MonoBehaviour
                 GUIManager.sharedInstance.SetChallengeValue(candiesToDestroy);
             }
 
-            BoardManager.sharedInstance.combo += 1;
+            BoardManager.sharedInstance.Combo += 1;
 
             // llevamos los espacios vacios
             //BoardManager.sharedInstance.StopCandiesRainRoutine();
