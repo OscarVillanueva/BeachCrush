@@ -10,11 +10,12 @@ public class CandyController : MonoBehaviour
     private static Color selectedColor = new Color(0.5f, 0.5f, 0.5f, 1.0f);
     private static CandyController previousSelected = null;
 
-    private SpriteRenderer spriteRenderer; 
+    private SpriteRenderer spriteRenderer;
     private bool isSelected = false;
 
     private bool wasMatch = false;
 
+    public Animator animator;
     private int candiesToDestroy = 0;
 
     private Vector2[] adjacentDirections = new Vector2[] {
@@ -29,6 +30,12 @@ public class CandyController : MonoBehaviour
     private void Awake()
     {
         spriteRenderer = GetComponent<SpriteRenderer>();
+    }
+
+    private void Start()
+    {
+        animator = GetComponent<Animator>();
+        animator.SetFloat("whichCandy", id);
     }
 
     private void SelectCandy()
@@ -103,13 +110,12 @@ public class CandyController : MonoBehaviour
     {
         if (spriteRenderer.sprite == newCandy.GetComponent<SpriteRenderer>().sprite) return;
 
-        Sprite oldCandy = newCandy.spriteRenderer.sprite;
-        newCandy.spriteRenderer.sprite = this.spriteRenderer.sprite;
-        this.spriteRenderer.sprite = oldCandy;
-
         int oldID = newCandy.id;
         newCandy.id = this.id;
         this.id = oldID;
+
+        newCandy.animator.SetFloat("whichCandy", newCandy.id);
+        this.animator.SetFloat("whichCandy", this.id);
     }
 
     private GameObject GetNeighboar(Vector2 direction)
@@ -173,7 +179,8 @@ public class CandyController : MonoBehaviour
         {
             foreach(GameObject candy in matchingCandies)
             {
-                candy.GetComponent<SpriteRenderer>().sprite = null;
+                candy.GetComponent<CandyController>().animator.SetBool("isDestroying", true);
+                candy.GetComponent<CandyController>().id = -1;
             }
 
             return true;
@@ -202,7 +209,9 @@ public class CandyController : MonoBehaviour
         // El clearMatch Borra los matches pero ahora hay que borrarnos a nostros mismos
         if (hMatch || vMatch)
         {
-            spriteRenderer.sprite = null;
+
+            animator.SetBool("isDestroying", true);
+            id = -1;
 
             wasMatch = true;
 
@@ -218,10 +227,7 @@ public class CandyController : MonoBehaviour
 
             BoardManager.sharedInstance.Combo += 1;
 
-            // llevamos los espacios vacios
-            //BoardManager.sharedInstance.StopCandiesRainRoutine();
-            StopCoroutine(BoardManager.sharedInstance.FindNullableCandies());
-            StartCoroutine(BoardManager.sharedInstance.FindNullableCandies());
+             // llevamos los espacios vacios
         }
         else
         {
@@ -231,5 +237,21 @@ public class CandyController : MonoBehaviour
         candiesToDestroy = 0;
     }
 
+    public void AnimationHasFinish()
+    {
+        if (animator.GetBool("isDestroying"))
+        {
+            animator.SetBool("isDestroying", false);
+            StopCoroutine(BoardManager.sharedInstance.FindNullableCandies());
+            StartCoroutine(BoardManager.sharedInstance.FindNullableCandies());
+        }
+    }
+
+    public void ResetCandy(int id)
+    {
+        animator.SetBool("isDestroying", false);
+        animator.SetFloat("whichCandy", id);
+        this.id = id;
+    }
 
 }

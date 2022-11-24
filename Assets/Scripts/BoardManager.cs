@@ -24,13 +24,13 @@ public class BoardManager : MonoBehaviour
     public const int MinCandiesToMatch = 2;
 
     // Saber cuales son los candies posibles y sus ids
-    private Dictionary<int, Sprite> bookOfCandies = new();
+    private readonly Dictionary<int, Sprite> bookOfCandies = new();
 
     // Lista con los pesos que va a tener cada sprite
-    private List<int> weights = new();
+    private readonly List<int> weights = new();
 
     // Lista de la serie acumulativa
-    private List<int> serie = new();
+    private readonly List<int> serie = new();
 
     // Saber si estamos en challenge
     private bool isChallenge;
@@ -261,7 +261,7 @@ public class BoardManager : MonoBehaviour
         for(int x = 0; x < xSize; x++)
             for(int y = 0; y < ySize; y++)
             {
-                if (!candies[x,y].GetComponent<SpriteRenderer>().sprite)
+                if (candies[x,y].GetComponent<CandyController>().id == -1)
                 {
                     yield return StartCoroutine(MakeCandiesFall(x, y));
                     break;
@@ -277,38 +277,47 @@ public class BoardManager : MonoBehaviour
 
     IEnumerator MakeCandiesFall(int x, int ystart, float shiftDelay = 0.05f)
     {
+        // TODO: Recuperar el score
+        if (IsShifting) yield break;
+
         IsShifting = true;
         AudioSource.PlayClipAtPoint(candyAppearingSound, transform.position);
 
-        List<GameObject> renderers = new List<GameObject>();
-        int nullCandies = 0;
+        int walks;
+        int walksID;
 
         for(int y = ystart; y < ySize; y++)
         {
             GameObject candy = candies[x, y];
-            SpriteRenderer spriteRenderer = candy.GetComponent<SpriteRenderer>();
+            int id = candy.GetComponent<CandyController>().id;
 
-            if (!spriteRenderer.sprite) nullCandies = nullCandies + 1;
-
-            renderers.Add(candy);
-        }
-
-        for (int i = 0; i < nullCandies; i++)
-        {
-            // Dar 10 puntos por cada caramelo nuevo que baja
-            GUIManager.sharedInstance.Score += 10;
-
-            yield return new WaitForSeconds(shiftDelay);
-
-            for (int j = 0; j < renderers.Count - 1; j++)
+            if (id == -1)
             {
-                Candy newCandy = GenerateCandy(x, ySize - 1);
+                walks = y;
+                walksID = -1;
 
-                renderers[j].GetComponent<CandyController>().id = renderers[j + 1].GetComponent<CandyController>().id;
-                renderers[j + 1].GetComponent<CandyController>().id = newCandy.ID;
+                while (walksID == -1 && walks < ySize)
+                {
+                    GameObject wCandy = candies[x, walks];
+                    walksID = wCandy.GetComponent<CandyController>().id;
+                    walks = walks + 1;
+                }
 
-                renderers[j].GetComponent<SpriteRenderer>().sprite = renderers[j + 1].GetComponent<SpriteRenderer>().sprite;
-                renderers[j + 1].GetComponent<SpriteRenderer>().sprite = newCandy.SpriteCandy;
+                walks = walks - 1;
+
+                if (walksID != -1)
+                {
+                    int bridge = candies[x, walks].GetComponent<CandyController>().id;
+
+                    candies[x, walks].GetComponent<CandyController>().ResetCandy(candies[x, y].GetComponent<CandyController>().id);
+                    candies[x, y].GetComponent<CandyController>().ResetCandy(bridge);
+                    yield return new WaitForSeconds(shiftDelay);
+
+                }
+                else
+                {
+                    candies[x, y].GetComponent<CandyController>().ResetCandy(GenerateCandy(x, walks - 1).ID);
+                }
             }
         }
 
