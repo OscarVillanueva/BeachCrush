@@ -12,14 +12,31 @@ public class GameOverController : MonoBehaviour
 
     private void Start()
     {
-        scoreValue.text = PlayerPrefs.GetInt("score", 0).ToString();
+        int maxScore;
+        int score = PlayerPrefs.GetInt("score", 0);
+        scoreValue.text = score.ToString();
 
         if (PlayerPrefs.GetInt("challenge", 0) == 1)
         {
             if (PlayerPrefs.GetInt("won") == 0)
                 matchResultText.text = "You lose";
+            else
+            {
+                maxScore = PlayerPrefs.GetInt("ChallengeMaxScore", 0);
+
+                if (score > maxScore) PlayerPrefs.SetInt("ChallengeMaxScore", score);
+            }
+
         }
-        else matchResultText.text = "Awesome";
+        else
+        {
+            matchResultText.text = "Awesome";
+
+            maxScore = PlayerPrefs.GetInt("RegularMaxScore", 0);
+
+            if (score > maxScore) PlayerPrefs.SetInt("RegularMaxScore", score);
+        }
+
     }
 
     public void Replay()

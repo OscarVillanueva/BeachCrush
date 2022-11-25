@@ -15,6 +15,8 @@ public class CandyController : MonoBehaviour
 
     private bool wasMatch = false;
 
+    private bool addMovement = false;
+
     public Animator animator;
     private int candiesToDestroy = 0;
 
@@ -83,11 +85,12 @@ public class CandyController : MonoBehaviour
                     // si challenge damos un movimiento extra
                     if (
                         BoardManager.sharedInstance.IsChallenge 
-                        && BoardManager.sharedInstance.LookingForID == id 
+                        && addMovement
                         && wasMatch
                     )
                     {
                         GUIManager.sharedInstance.MoveCounter += 1;
+                        addMovement = false;
                     }
                     else
                     {
@@ -211,10 +214,8 @@ public class CandyController : MonoBehaviour
         {
 
             animator.SetBool("isDestroying", true);
-            id = -1;
-
             wasMatch = true;
-
+            
             candiesToDestroy = candiesToDestroy + 1;
 
             if (
@@ -222,12 +223,12 @@ public class CandyController : MonoBehaviour
                 && BoardManager.sharedInstance.LookingForID == id
             )
             {
+                addMovement = true;
                 GUIManager.sharedInstance.SetChallengeValue(candiesToDestroy);
             }
 
+            id = -1;
             BoardManager.sharedInstance.Combo += 1;
-
-             // llevamos los espacios vacios
         }
         else
         {

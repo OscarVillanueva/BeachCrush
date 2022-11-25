@@ -19,6 +19,6 @@ public class MainMenuController : MonoBehaviour
 
     public void SeeScoreBoard()
     {
-        print("See scoreboard");
+        SceneManager.LoadScene("ScoreBoardScene");
     }
 }

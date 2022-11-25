@@ -293,6 +293,9 @@ public class BoardManager : MonoBehaviour
 
             if (id == -1)
             {
+
+                GUIManager.sharedInstance.Score += 10;
+
                 walks = y;
                 walksID = -1;
 
